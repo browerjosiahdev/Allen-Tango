@@ -9,7 +9,7 @@ public class PoseController : MonoBehaviour, ITangoPose {
     private Quaternion m_tangoRotation;
     private Vector3 m_startPosition;
 
-    private float m_movementScale = 10.0f;
+    private float m_movementScale = 3.0f;
 
     /// <summary>
     /// Initialize the class.

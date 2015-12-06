@@ -1,2 +1,5 @@
 # Ignore the visual studio ".vs" directory.
 .vs/
+
+# Ignore the Unity "Temp" directory.
+Temp/
