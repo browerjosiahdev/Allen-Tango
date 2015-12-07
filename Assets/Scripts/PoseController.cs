@@ -5,7 +5,10 @@ using System;
 using UnityEngine.UI;
 
 public class PoseController : MonoBehaviour, ITangoPose {
-    public GameObject p_player;
+    public GameObject player;
+    public GameObject plane;
+    public float speed;
+    public float jump;
 
     private TangoApplication m_tangoApplication;
     private Vector3 m_tangoPosition;
@@ -28,6 +31,14 @@ public class PoseController : MonoBehaviour, ITangoPose {
             m_tangoApplication.RegisterPermissionsCallback(PermissionsCallback);
             m_tangoApplication.RequestNecessaryPermissionsAndConnect();
             m_tangoApplication.Register(this);
+
+            // Get a handle to the world.
+            plane = GameObject.FindWithTag("World");
+
+            // Apply the live texture from the web cam.
+            WebCamTexture webCamTexture = new WebCamTexture();
+            plane.GetComponent<Renderer>().material.mainTexture = webCamTexture;
+            webCamTexture.Play();
         }
         else
         {
@@ -117,29 +128,47 @@ public class PoseController : MonoBehaviour, ITangoPose {
     }
 
     /// <summary>
-    /// 
+    /// Called everytime the frame updates.
     /// </summary>
     void Update()
     {
+        // Transform the tango position into the Unity coordinate system.
         Matrix4x4 uwTuc = TransformTangoPoseToUnityCoordinateSystem(m_tangoPosition, m_tangoRotation, Vector3.one);
 
         // Extract new local position.
         transform.position = (uwTuc.GetColumn(3)) * m_movementScale;
         transform.position += m_startPosition;
 
-        if (p_player != null)
+        if (player != null)
         {
-            Rigidbody playerBody = p_player.GetComponent<Rigidbody>();
+            Rigidbody playerBody = player.GetComponent<Rigidbody>();
 
-            if (playerBody != null && Input.touchCount == 1 && Input.GetTouch(0).phase == TouchPhase.Moved)
+            if (playerBody != null)
             {
-                Vector2 touchDeltaPosition = Input.GetTouch(0).deltaPosition;
-                Vector3 deltaForce = Vector3.zero;
+                Vector3 force = Vector3.zero;
+                Touch touch = new Touch();
 
-                deltaForce.x = touchDeltaPosition.x;
-                deltaForce.z = touchDeltaPosition.y;
+                if (Input.touchCount == 1 && Input.GetTouch(0).phase == TouchPhase.Moved)
+                {
+                    // Get the delta of the touch movement.
+                    Vector2 touchDeltaPosition = Input.GetTouch(0).deltaPosition;
 
-                playerBody.AddForce(deltaForce);
+                    // Apply the changes to force object, and change the y to z.
+                    force.x = touchDeltaPosition.x;
+                    force.z = touchDeltaPosition.y;
+
+                    // Transform the force based off the camera direction.
+                    force = gameObject.transform.TransformDirection(force);
+                }
+                else if (touch.tapCount == 1)
+                {
+                    force.y = jump;
+
+                    Debug.Log("JUMP!");
+                }
+
+                // Apply the force to the player body.
+                playerBody.AddForce(force * speed);
             }
         }
 
