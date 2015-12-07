@@ -2,8 +2,11 @@
 using System.Collections;
 using Tango;
 using System;
+using UnityEngine.UI;
 
 public class PoseController : MonoBehaviour, ITangoPose {
+    public GameObject p_player;
+
     private TangoApplication m_tangoApplication;
     private Vector3 m_tangoPosition;
     private Quaternion m_tangoRotation;
@@ -113,6 +116,9 @@ public class PoseController : MonoBehaviour, ITangoPose {
         return uwTss * ssTd * dTuc;
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     void Update()
     {
         Matrix4x4 uwTuc = TransformTangoPoseToUnityCoordinateSystem(m_tangoPosition, m_tangoRotation, Vector3.one);
@@ -120,6 +126,22 @@ public class PoseController : MonoBehaviour, ITangoPose {
         // Extract new local position.
         transform.position = (uwTuc.GetColumn(3)) * m_movementScale;
         transform.position += m_startPosition;
+
+        if (p_player != null)
+        {
+            Rigidbody playerBody = p_player.GetComponent<Rigidbody>();
+
+            if (playerBody != null && Input.touchCount == 1 && Input.GetTouch(0).phase == TouchPhase.Moved)
+            {
+                Vector2 touchDeltaPosition = Input.GetTouch(0).deltaPosition;
+                Vector3 deltaForce = Vector3.zero;
+
+                deltaForce.x = touchDeltaPosition.x;
+                deltaForce.z = touchDeltaPosition.y;
+
+                playerBody.AddForce(deltaForce);
+            }
+        }
 
         // Extract new local rotation.
         transform.rotation = Quaternion.LookRotation(uwTuc.GetColumn(2), uwTuc.GetColumn(1));
